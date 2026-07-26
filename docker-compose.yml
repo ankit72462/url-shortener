@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────
+  # FastAPI Backend
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: urlshortener-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mssql+aioodbc://sa:YourStrong!Passw0rd@sqlserver:1433/url_shortener?driver=ODBC+Driver+17+for+SQL+Server
+      - REDIS_URL=redis://redis:6379/0
+      - BASE_URL=http://localhost:8000
+      - NODE_ID=1
+    depends_on:
+      redis:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - urlshortener
+
+  # ─────────────────────────────────────────────
+  # Next.js Frontend
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: urlshortener-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - urlshortener
+
+  # ─────────────────────────────────────────────
+  # Microsoft SQL Server 2022
+  # ─────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: urlshortener-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Developer
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong!Passw0rd" -Q "SELECT 1" -C -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - urlshortener
+
+  # ─────────────────────────────────────────────
+  # Redis 7 (Cache)
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: urlshortener-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - urlshortener
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  urlshortener:
+    driver: bridge
