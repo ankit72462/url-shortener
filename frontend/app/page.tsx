@@ -219,7 +219,7 @@ export default function Home() {
         transition={{ delay: 0.4, duration: 0.5 }}
         style={{ marginBottom: "4rem", maxWidth: "728px", margin: "0 auto 4rem auto" }}
       >
-        <GoogleAd adSlot="HOMEPAGE_BANNER_SLOT" format="horizontal" />
+        <GoogleAd adSlot="7570244077" format="horizontal" />
       </motion.div>
 
       {/* ===== Features Section ===== */}
@@ -269,7 +269,7 @@ export default function Home() {
 
       {/* ===== Bottom Ad ===== */}
       <div style={{ marginTop: "3rem", maxWidth: "728px", margin: "3rem auto 0 auto" }}>
-        <GoogleAd adSlot="HOMEPAGE_BOTTOM_SLOT" format="horizontal" />
+        <GoogleAd adSlot="7570244077" format="horizontal" />
       </div>
     </>
   );

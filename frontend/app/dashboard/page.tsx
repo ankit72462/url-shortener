@@ -91,7 +91,7 @@ export default function DashboardPage() {
         transition={{ delay: 0.1 }}
         style={{ marginBottom: "2rem" }}
       >
-        <GoogleAd adSlot="DASHBOARD_TOP_SLOT" format="horizontal" />
+        <GoogleAd adSlot="7570244077" format="horizontal" />
       </motion.div>
 
       {error && (
