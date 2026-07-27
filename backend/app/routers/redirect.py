@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from redis.asyncio import Redis
-from app.database import get_db, AsyncSessionLocal
+from app.database import get_db, SessionLocal
 from app.redis_client import get_redis
 from app.services.shortener import resolve_short_code, record_click
 import logging
@@ -12,7 +12,7 @@ router = APIRouter(tags=["redirect"])
 
 async def background_record_click(short_code: str, req_info: dict):
     try:
-        async with AsyncSessionLocal() as session:
+        with SessionLocal() as session:
             await record_click(session, short_code, req_info)
     except Exception as e:
         logger.error(f"Failed to record click for {short_code}: {e}")
@@ -22,7 +22,7 @@ async def redirect_to_long_url(
     short_code: str, 
     request: Request,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db), 
+    db: Session = Depends(get_db), 
     redis: Redis | None = Depends(get_redis)
 ):
     long_url, has_password = await resolve_short_code(db, redis, short_code)

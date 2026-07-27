@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 from redis.asyncio import Redis
 from app.database import get_db
@@ -9,10 +9,10 @@ from app.schemas.health import HealthResponse
 router = APIRouter(prefix="/api/v1/health", tags=["health"])
 
 @router.get("", response_model=HealthResponse)
-async def check_health(db: AsyncSession = Depends(get_db), redis: Redis | None = Depends(get_redis)):
+async def check_health(db: Session = Depends(get_db), redis: Redis | None = Depends(get_redis)):
     db_status = "ok"
     try:
-        await db.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
     except Exception:
         db_status = "error"
         

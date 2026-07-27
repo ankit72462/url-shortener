@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from jose import JWTError, jwt
 
@@ -15,7 +15,7 @@ from app.services.logger import log_activity, log_failure
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -30,13 +30,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except JWTError:
         raise credentials_exception
     
-    result = await db.execute(select(User).filter(User.id == token_data.user_id))
+    result = db.execute(select(User).filter(User.id == token_data.user_id))
     user = result.scalars().first()
     if user is None:
         raise credentials_exception
     return user
 
-async def get_current_user_optional(token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)), db: AsyncSession = Depends(get_db)):
+async def get_current_user_optional(token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)), db: Session = Depends(get_db)):
     if not token:
         return None
     try:
@@ -45,8 +45,8 @@ async def get_current_user_optional(token: str | None = Depends(OAuth2PasswordBe
         return None
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(user: UserCreate, request: Request, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).filter((User.username == user.username) | (User.email == user.email)))
+async def signup(user: UserCreate, request: Request, db: Session = Depends(get_db)):
+    result = db.execute(select(User).filter((User.username == user.username) | (User.email == user.email)))
     existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username or email already registered")
@@ -64,14 +64,14 @@ async def signup(user: UserCreate, request: Request, db: AsyncSession = Depends(
         hashed_password=hashed_password
     )
     db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
+    db.commit()
+    db.refresh(new_user)
     await log_activity(db, "USER_SIGNUP", {"username": user.username}, user_id=new_user.id, ip_address=request.client.host)
     return new_user
 
 @router.post("/login", response_model=Token)
-async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).filter((User.username == form_data.username) | (User.email == form_data.username)))
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    result = db.execute(select(User).filter((User.username == form_data.username) | (User.email == form_data.username)))
     user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         await log_failure(db, "LOGIN_FAILED", {"username": form_data.username}, user_id=user.id if user else None, ip_address=request.client.host)

@@ -49,6 +49,7 @@ export interface Link {
   clicks: number;
   created_at: string;
   short_url?: string;
+  has_password?: boolean;
 }
 
 // API functions

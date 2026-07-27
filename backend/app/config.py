@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     BASE_URL: str
-    NODE_ID: int
+    NODE_ID: int = 1
     SECRET_KEY: str = "supersecretkey_change_me_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy import delete
 from typing import List
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1/links", tags=["links"])
 async def create_link(
     request_data: CreateLinkRequest, 
     request: Request,
-    db: AsyncSession = Depends(get_db), 
+    db: Session = Depends(get_db), 
     current_user: User | None = Depends(get_current_user_optional)
 ):
     user_id = current_user.id if current_user else None
@@ -49,7 +49,7 @@ async def create_link(
             from app.models.logs import ActivityLog
             from datetime import datetime, timedelta
             time_limit = datetime.utcnow() - timedelta(hours=12)
-            result = await db.execute(
+            result = db.execute(
                 select(ActivityLog)
                 .filter(
                     ActivityLog.ip_address == ip_addr,
@@ -78,10 +78,10 @@ async def create_link(
 
 @router.get("", response_model=List[LinkInfo])
 async def list_links(
-    db: AsyncSession = Depends(get_db), 
+    db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(Link).filter(Link.owner_id == current_user.id))
+    result = db.execute(select(Link).filter(Link.owner_id == current_user.id))
     links = result.scalars().all()
     return links
 
@@ -89,11 +89,11 @@ async def list_links(
 async def update_link(
     short_code: str,
     request: UpdateLinkRequest,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     redis = Depends(get_redis)
 ):
-    result = await db.execute(select(Link).filter(Link.short_code == short_code, Link.owner_id == current_user.id))
+    result = db.execute(select(Link).filter(Link.short_code == short_code, Link.owner_id == current_user.id))
     link = result.scalars().first()
     
     if not link:
@@ -109,8 +109,8 @@ async def update_link(
     if request.expires_at is not None:
         link.expires_at = request.expires_at
     
-    await db.commit()
-    await db.refresh(link)
+    db.commit()
+    db.refresh(link)
     
     if redis:
         try:
@@ -123,18 +123,18 @@ async def update_link(
 @router.delete("/{short_code}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_link(
     short_code: str,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     redis = Depends(get_redis)
 ):
-    result = await db.execute(select(Link).filter(Link.short_code == short_code, Link.owner_id == current_user.id))
+    result = db.execute(select(Link).filter(Link.short_code == short_code, Link.owner_id == current_user.id))
     link = result.scalars().first()
     
     if not link:
         raise HTTPException(status_code=404, detail="Link not found or not owned by user")
         
     await db.delete(link)
-    await db.commit()
+    db.commit()
     
     if redis:
         try:
@@ -147,9 +147,9 @@ async def unlock_link(
     short_code: str,
     request_data: UnlockLinkRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    result = await db.execute(select(Link).filter(Link.short_code == short_code))
+    result = db.execute(select(Link).filter(Link.short_code == short_code))
     link = result.scalars().first()
     
     if not link:

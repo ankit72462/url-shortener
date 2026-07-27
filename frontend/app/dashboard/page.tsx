@@ -140,7 +140,7 @@ export default function DashboardPage() {
                       style={{ fontSize: "1.25rem", fontWeight: "700", color: "var(--primary)", display: "flex", alignItems: "center", gap: "0.5rem", wordBreak: "break-all" }}
                     >
                       /{link.short_code}
-                      {link.has_password && <Lock size={16} color="var(--accent)" title="Password Protected" />}
+                      {link.has_password && <Lock size={16} color="var(--accent)" />}
                       <ExternalLink size={16} />
                     </a>
                     <span className={link.is_active ? "badge badge-success" : "badge badge-danger"}>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                     whiteSpace: "nowrap", 
                     overflow: "hidden", 
                     textOverflow: "ellipsis",
-                    background: "rgba(0,0,0,0.3)",
+                    background: "var(--card-deep-bg)",
                     padding: "0.75rem 1rem",
                     borderRadius: "8px",
                     border: "1px solid var(--border-light)"

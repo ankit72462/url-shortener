@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 from redis.asyncio import Redis
 from app.models.link import Link
@@ -16,13 +16,13 @@ import hashlib
 
 logger = logging.getLogger(__name__)
 
-async def create_short_link(db: AsyncSession, request: CreateLinkRequest, user_id: int | None = None) -> LinkInfo:
+async def create_short_link(db: Session, request: CreateLinkRequest, user_id: int | None = None) -> LinkInfo:
     long_url = str(request.long_url)
     
     is_custom_alias = False
     if request.custom_alias:
         # Check if custom alias exists
-        result = await db.execute(select(Link).where(Link.short_code == request.custom_alias))
+        result = db.execute(select(Link).where(Link.short_code == request.custom_alias))
         existing_link = result.scalar_one_or_none()
         if existing_link:
             raise HTTPException(status_code=409, detail="Custom alias already exists")
@@ -33,7 +33,7 @@ async def create_short_link(db: AsyncSession, request: CreateLinkRequest, user_i
     else:
         snowflake_id, short_code = generate_id()
         # Safety check — collision is extremely rare but handle it
-        result = await db.execute(select(Link).where(Link.short_code == short_code))
+        result = db.execute(select(Link).where(Link.short_code == short_code))
         if result.scalar_one_or_none():
             # Retry once
             snowflake_id, short_code = generate_id()
@@ -51,12 +51,12 @@ async def create_short_link(db: AsyncSession, request: CreateLinkRequest, user_i
     )
     
     db.add(new_link)
-    await db.commit()
-    await db.refresh(new_link)
+    db.commit()
+    db.refresh(new_link)
     
     return LinkInfo.model_validate(new_link)
 
-async def resolve_short_code(db: AsyncSession, redis: Redis | None, short_code: str) -> tuple[str | None, bool]:
+async def resolve_short_code(db: Session, redis: Redis | None, short_code: str) -> tuple[str | None, bool]:
     # Try cache first (if Redis is available)
     if redis is not None:
         try:
@@ -69,7 +69,7 @@ async def resolve_short_code(db: AsyncSession, redis: Redis | None, short_code: 
             logger.warning(f"Redis read error: {e}")
     
     # Cache miss or no Redis — query database
-    result = await db.execute(select(Link).where(Link.short_code == short_code))
+    result = db.execute(select(Link).where(Link.short_code == short_code))
     link = result.scalar_one_or_none()
     
     if link and link.is_active:
@@ -99,16 +99,16 @@ async def resolve_short_code(db: AsyncSession, redis: Redis | None, short_code: 
             pass
     return None, False
 
-async def record_click(db: AsyncSession, short_code: str, req_info: dict):
+async def record_click(db: Session, short_code: str, req_info: dict):
     # First get the link id
-    result = await db.execute(select(Link.id).where(Link.short_code == short_code))
+    result = db.execute(select(Link.id).where(Link.short_code == short_code))
     link_id = result.scalar_one_or_none()
     
     if not link_id:
         return
         
     # Increment count
-    await db.execute(
+    db.execute(
         update(Link)
         .where(Link.id == link_id)
         .values(click_count=Link.click_count + 1)
@@ -144,4 +144,4 @@ async def record_click(db: AsyncSession, short_code: str, req_info: dict):
     )
     
     db.add(new_click)
-    await db.commit()
+    db.commit()

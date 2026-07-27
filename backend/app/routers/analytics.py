@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy import func
 from app.database import get_db
@@ -16,10 +16,10 @@ router = APIRouter(prefix='/api/v1/analytics', tags=['analytics'])
 @router.get('/{short_code}', response_model=AnalyticsResponse)
 async def get_analytics(
     short_code: str,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(Link).where(Link.short_code == short_code, Link.owner_id == current_user.id))
+    result = db.execute(select(Link).where(Link.short_code == short_code, Link.owner_id == current_user.id))
     link = result.scalars().first()
     
     if not link:
@@ -27,10 +27,10 @@ async def get_analytics(
         
     thirty_days_ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)
     
-    total_result = await db.execute(select(func.count(Click.id)).where(Click.link_id == link.id))
+    total_result = db.execute(select(func.count(Click.id)).where(Click.link_id == link.id))
     total_clicks = total_result.scalar() or 0
     
-    clicks_result = await db.execute(
+    clicks_result = db.execute(
         select(Click).where(Click.link_id == link.id, Click.clicked_at >= thirty_days_ago)
     )
     clicks = clicks_result.scalars().all()

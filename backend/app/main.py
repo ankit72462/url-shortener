@@ -12,7 +12,7 @@ import app.models.logs
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await create_tables()
+    create_tables()
     await init_redis()
     yield
     # Shutdown
