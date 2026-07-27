@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 import CookieConsent from "@/components/CookieConsent";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -78,6 +79,7 @@ export default function RootLayout({
           <main className="container main-content">{children}</main>
           <Footer />
           <CookieConsent />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
