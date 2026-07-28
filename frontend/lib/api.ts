@@ -1,4 +1,7 @@
-const API_BASE = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000");
+function getApiBase() {
+  if (typeof window !== "undefined") return "";
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+}
 
 // Auth helpers
 export function getToken() {
@@ -62,7 +65,7 @@ export async function shortenUrl(longUrl: string, customAlias?: string, password
     body.password = password;
   }
   
-  const res = await fetch(`${API_BASE}/api/v1/links`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -84,7 +87,7 @@ export async function login(email: string, password: string): Promise<{ access_t
   formData.append("username", email);
   formData.append("password", password);
 
-  const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+  const res = await fetch(`${getApiBase()}/api/v1/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -103,7 +106,7 @@ export async function login(email: string, password: string): Promise<{ access_t
 }
 
 export async function unlockLink(shortCode: string, password: string): Promise<{ long_url: string }> {
-  const res = await fetch(`${API_BASE}/api/v1/links/${shortCode}/unlock`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links/${shortCode}/unlock`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -127,7 +130,7 @@ export async function signup(
   lastName?: string, 
   mobileNumber?: string
 ): Promise<User> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/signup`, {
+  const res = await fetch(`${getApiBase()}/api/v1/auth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,7 +154,7 @@ export async function signup(
 }
 
 export async function getMe(): Promise<User> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+  const res = await fetch(`${getApiBase()}/api/v1/auth/me`, {
     method: "GET",
     headers: {
       ...getAuthHeaders(),
@@ -168,7 +171,7 @@ export async function getMe(): Promise<User> {
 }
 
 export async function listUserLinks(): Promise<Link[]> {
-  const res = await fetch(`${API_BASE}/api/v1/links`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links`, {
     method: "GET",
     headers: {
       ...getAuthHeaders(),
@@ -184,7 +187,7 @@ export async function listUserLinks(): Promise<Link[]> {
 }
 
 export async function updateLink(shortCode: string, isActive: boolean): Promise<Link> {
-  const res = await fetch(`${API_BASE}/api/v1/links/${shortCode}`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links/${shortCode}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -202,7 +205,7 @@ export async function updateLink(shortCode: string, isActive: boolean): Promise<
 }
 
 export async function deleteLink(shortCode: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/v1/links/${shortCode}`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links/${shortCode}`, {
     method: "DELETE",
     headers: {
       ...getAuthHeaders(),
@@ -225,7 +228,7 @@ export interface AnalyticsData {
 }
 
 export async function getAnalytics(shortCode: string): Promise<AnalyticsData> {
-  const res = await fetch(`${API_BASE}/api/v1/links/${shortCode}/analytics`, {
+  const res = await fetch(`${getApiBase()}/api/v1/links/${shortCode}/analytics`, {
     method: "GET",
     headers: {
       ...getAuthHeaders(),
@@ -241,7 +244,7 @@ export async function getAnalytics(shortCode: string): Promise<AnalyticsData> {
 }
 
 export async function checkHealth() {
-  const res = await fetch(`${API_BASE}/api/v1/health`);
+  const res = await fetch(`${getApiBase()}/api/v1/health`);
   return res.json();
 }
 
@@ -256,7 +259,7 @@ export interface LogEntry {
 }
 
 export async function getActivityLogs(): Promise<LogEntry[]> {
-  const res = await fetch(`${API_BASE}/api/v1/admin/logs/activity`, {
+  const res = await fetch(`${getApiBase()}/api/v1/admin/logs/activity`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch activity logs");
@@ -264,7 +267,7 @@ export async function getActivityLogs(): Promise<LogEntry[]> {
 }
 
 export async function getFailureLogs(): Promise<LogEntry[]> {
-  const res = await fetch(`${API_BASE}/api/v1/admin/logs/failures`, {
+  const res = await fetch(`${getApiBase()}/api/v1/admin/logs/failures`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch failure logs");
