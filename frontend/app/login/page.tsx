@@ -5,10 +5,10 @@ import { login } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogIn, Mail, Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { LogIn, User, Lock, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!identifier || !password) {
       setError("Please fill in all fields");
       return;
     }
@@ -26,7 +26,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(identifier, password);
       setSuccess(true);
       setLoading(false);
 
@@ -126,17 +126,17 @@ export default function LoginPage() {
             transition={{ delay: 0.1, duration: 0.4 }}
           >
             <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem", color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-              <Mail size={15} /> Email
+              <User size={15} /> Username or Email
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              type="text"
+              value={identifier}
+              onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
               className="input"
-              placeholder="you@example.com"
+              placeholder="Username or you@example.com"
               required
               disabled={loading || success}
-              id="login-email"
+              id="login-identifier"
             />
           </motion.div>
 
